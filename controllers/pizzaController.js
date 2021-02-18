@@ -1,6 +1,6 @@
-const Pizza = require('../models/Pizza');
+const Pizza = require("../models/Pizza");
 
-exports.list = async (req, res) => {
+exports.list = async (req, res, next) => {
   const limit = req.query.limit <= 100 ? parseInt(req.query.limit) : 10;
   let page = 0;
   if (req.query.page) {
@@ -9,27 +9,27 @@ exports.list = async (req, res) => {
   }
 
   try {
-    const pizza = await Pizza
-      .find()
+    const pizza = await Pizza.find()
       .skip(parseInt(limit * page))
       .limit(parseInt(limit))
-      .populate('ingredients')
+      .populate("ingredients")
       .lean();
-    res.status(200).json(pizza);
+    res.locals.data = pizza;
+    return next();
   } catch (error) {
-    res.status(400).json(error);
+    return res.status(400).json(error);
   }
 };
 
-exports.findById = async (req, res) => {
+exports.findById = async (req, res, next) => {
   try {
-    const pizza = await Pizza
-      .findById(req.params.id)
-      .populate('ingredients')
+    const pizza = await Pizza.findById(req.params.id)
+      .populate("ingredients")
       .lean();
-    res.status(200).json(pizza);
+    res.locals.data = pizza;
+    return next();
   } catch (error) {
-    res.status(400).json({ message: 'pizza not found' });
+    return res.status(400).json({ message: "pizza not found" });
   }
 };
 
@@ -37,10 +37,10 @@ exports.insert = async (req, res) => {
   try {
     const pizza = new Pizza(req.body);
     await pizza.save();
-    await Pizza.populate(pizza, { path: 'ingredients' });
+    await Pizza.populate(pizza, { path: "ingredients" });
     res.status(201).json({
       data: pizza,
-      message: 'pizza saved',
+      message: "pizza saved",
     });
   } catch (error) {
     res.status(400).json(error);
@@ -49,13 +49,11 @@ exports.insert = async (req, res) => {
 
 exports.removeById = async (req, res) => {
   try {
-    const pizza = await Pizza
-      .findById(req.params.id)
-      .populate('ingredients');
+    const pizza = await Pizza.findById(req.params.id).populate("ingredients");
     await pizza.deleteOne();
     res.status(200).json({
       data: pizza,
-      message: 'pizza removed',
+      message: "pizza removed",
     });
   } catch (error) {
     res.status(400).json(error);
@@ -67,10 +65,10 @@ exports.patchById = async (req, res) => {
     const pizza = await Pizza.findById(req.params.id);
     pizza.set(req.body);
     await pizza.save();
-    await Pizza.populate(pizza, { path: 'ingredients' });
+    await Pizza.populate(pizza, { path: "ingredients" });
     res.status(200).json({
       data: pizza,
-      message: 'pizza updated',
+      message: "pizza updated",
     });
   } catch (error) {
     res.status(400).json(error);
